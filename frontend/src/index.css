@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+
+.orb{
+    height: 40px;
+    width: 40px;
+    background: conic-gradient(rgb(0, 45, 128),rgb(204, 0, 255),rgb(0, 200, 255));
+    filter: blur(3px);
+    border-radius: 50%;
+    overflow: hidden;
+    animation: spin 10s linear infinite;
+
+}
+
+.orb::after{
+    content: '';
+    position: absolute;
+    background: conic-gradient(rgb(0, 45, 128),rgb(204, 0, 255),rgb(0, 200, 255));
+    filter: blur(10px);
+    inset: -10%;
+    animation: spin 17s reverse infinite;
+    height: 40px;
+    width: 40px;
+}
+.orb::before{
+    content: '';
+    position: absolute;
+    background: conic-gradient(rgb(0, 45, 128),rgb(204, 0, 255),rgb(0, 200, 255));
+    filter: blur(10px);
+    inset: 10%;
+    animation: spin 13s linear infinite;
+    height: 40px;
+    width: 40px;
+}
+
+.dot1{
+    padding-right: 5px;
+    animation: bounce 1s infinite;
+}
+.dot2{
+    padding-right: 5px;
+    animation: bounce 1.3s infinite;
+}
+.dot3{
+    animation: bounce 1.6s infinite;
+}
+

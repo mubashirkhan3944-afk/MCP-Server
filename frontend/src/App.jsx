@@ -14,11 +14,7 @@ function App() {
     message:''
   })
   const [chatButton, setchatButton] = useState(false)
-  const [chat, setchat] = useState({
-    title:'',
-    messages
-  })
-  const [chatHistory, setchatHistory] = useState([chat,chat])
+  const [chatHistory, setchatHistory] = useState([])
 
   async function getChatHistory(id){
 

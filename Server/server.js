@@ -4,14 +4,12 @@ import * as z from 'zod/v4';
 import express from 'express';
 import {google} from 'googleapis'
 import {config} from 'dotenv'
-import connectDB from './db/db.js'
-import eventModel from './db/model.js';
-import { id } from 'zod/v4/locales';
+
 
 
 config();
 
-// connectDB();
+
 
 const app = express();
 
@@ -33,6 +31,7 @@ const calendar = google.calendar({
     version: "v3",
     auth: oauth2Client,
   });
+
 
   const server = new McpServer({
     name:'MCP_Server',
@@ -274,11 +273,11 @@ server.registerTool(
     inputSchema:{
       eventId: z.string(),
 
-      start: z.string().datetime({
+      startDateTime: z.string().datetime({
         offset: true,
       }),
 
-      end: z.string().datetime({
+      endDateTime: z.string().datetime({
         offset: true,
       }),
 
@@ -290,7 +289,7 @@ server.registerTool(
     }
   },
 
-  async (args)=>{
+  async ({eventId,startDateTime,endDateTime,location,summary,description})=>{
 
     if(!eventId){
       return {
@@ -305,6 +304,22 @@ server.registerTool(
 
     const start = new Date(startDateTime);
     const end = new Date(endDateTime);
+
+    if (
+      !Number.isFinite(start.getTime()) ||
+      !Number.isFinite(end.getTime()) ||
+      end <= start
+    ) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: "Invalid event times. End time must be after start time.",
+          },
+        ],
+      };
+    }
 
     const updatedEvent = await calendar.events.patch({
       calendarId:'primary',
@@ -339,56 +354,6 @@ server.registerTool(
   }
 
 )
-
-//Check database for specific event
-// server.registerTool(
-//   "Get_Event_Details",
-//   {
-//     description:`To check a specific event details from database.
-//     Exact title of the specific event must be given to fetch it and title can be found from google calendar using the tool Get_All_Events.`,
-//     inputSchema:{
-//       title: z.string()
-//     }
-//   },
-//   async ({ title }) => {
-//     try {
-//       const filter = {};
-
-//       if (title) {
-//         filter.title = {
-//           $regex: title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-//           $options: "i",
-//         };
-//       }
-
-//       const tasks = await eventModel.find(filter)
-//         .select("title description status")
-//         .limit(10)
-//         .lean();
-
-//       return {
-//         content: [
-//           {
-//             type: "text",
-//             text: JSON.stringify(tasks, null, 2),
-//           },
-//         ],
-//       };
-//     } catch (error) {
-//       console.error("MongoDB search error:", error.message);
-
-//       return {
-//         isError: true,
-//         content: [
-//           {
-//             type: "text",
-//             text: "Unable to retrieve tasks from MongoDB.",
-//           },
-//         ],
-//       };
-//     }
-//   }
-// )
 
 //Delete a specific event
 server.registerTool(

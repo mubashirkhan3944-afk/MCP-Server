@@ -5,12 +5,15 @@ import {SSEClientTransport} from '@modelcontextprotocol/sdk/client/sse.js'
 import readline from 'readline/promises'
 import { stdin,stdout } from 'process';
 import { text } from 'stream/consumers';
+import chatModel from './db/model.js';
+import { v4 } from 'uuid';
+
 
 config();
 
 
     const ai = new GoogleGenAI({
-        apiKey:process.env.GEMINI_API_KEY4
+        apiKey:process.env.GEMINI_API_KEY6
     });
     
     const mcpClient = new Client({
@@ -18,10 +21,6 @@ config();
         version:'1.0.0'
     })
     
-    const rl = readline.createInterface({
-        input:stdin,
-        output:stdout,
-    })
     
     const chatHistory = [];
     let tools = [];
@@ -43,11 +42,13 @@ config();
                 }
             }
         }))
-    
     })
     
-    
+
+
     export async function chatLoop(req,res) {
+
+        const chatId = req.body.chatId;
         
         if(req.body.toolCall){
             const {toolCall} = req.body;
@@ -68,6 +69,8 @@ config();
             arguments:toolCall.args,
             id:toolCall.id
         })
+
+        console.log(toolResult.content[0].text)
     
         chatHistory.push({
             role:'user',
@@ -78,7 +81,7 @@ config();
         })
     
         const afterResponse = await ai.models.generateContent({
-            model:'gemini-3-flash-preview',
+            model:'gemini-3.1-flash-lite',
             contents:chatHistory,
             config:{
                 tools:[
@@ -93,9 +96,10 @@ config();
     
     
         if(againFunctionCall){
-            return chatLoop({ body: { toolCall: againFunctionCall } }, res);
+            return chatLoop({ body: { toolCall: againFunctionCall, chatId } }, res);
         }
-    
+
+
         chatHistory.push({
             role:'model',
             parts:[{
@@ -103,23 +107,24 @@ config();
                 text:afterResponse.text
             }]
         })
+
+        const updatedchat = await chatModel.findByIdAndUpdate(chatId,{
+            $push:{
+                messages:{
+                    role:'user',
+                    message:afterResponse.text
+                }
+            }
+        },{
+            new: true
+          })
     
-        // console.log(afterResponse.text);
+        console.log('response added to chat',chatId);
         return res.status(200).json({
             message:afterResponse.text
         });
      
         }else{
-    
-            let question = '';
-    
-            if(chatHistory.length == 0){
-                question = question1 + req.body.prompt;
-                // question += await rl.question("You: ");
-            }else{
-                // question = await rl.question("You: ");
-                question = req.body.prompt;
-            }
     
     
             chatHistory.push({
@@ -127,13 +132,14 @@ config();
                 parts:[
                     {
                         type:'text',
-                        text:question
+                        text:req.body.prompt + question1
                     }
                 ]
             })
+
     
             const response = await ai.models.generateContent({
-                model:'gemini-3-flash-preview',
+                model:'gemini-3.1-flash-lite',
                 contents:chatHistory,
                 config:{
                     tools:[
@@ -147,7 +153,7 @@ config();
             const functionCall = response.candidates[0].content.parts[0].functionCall
     
             if(functionCall){
-                return chatLoop({ body: { toolCall: functionCall } }, res);
+                return chatLoop({ body: { toolCall: functionCall, chatId } }, res);
             }
     
             chatHistory.push({
@@ -157,13 +163,63 @@ config();
                     text:response.text
                 }]
             })
+
+            const updated = await chatModel.findByIdAndUpdate(chatId,{
+                $push:{
+                    messages:{
+                        role:'user',
+                        message:response.text
+                    }
+                }
+            },{
+                new: true
+              })
     
-            // console.log(response.text)
-            return res.status(200).json({
+            console.log('response added to chat',chatId);
+            res.status(200).json({
                 message:response.text
             });
     
         }
     
         chatLoop();
+    }
+
+    export async function getChatHistory(req,res){
+        const {id} = req.params;
+
+        const chat = await chatModel.findById(id);  
+
+        if(!chat){
+            return res.status(404).json({
+                message:'Chat not found'
+            });
+        }
+
+        return res.status(200).json({
+            chat
+        });
+    }
+
+    export async function getAllChats(req,res){
+
+        const chats = await chatModel.find();
+
+        return res.status(200).json({
+            chats
+        });
+    }
+
+    export async function createChat(req,res){
+        const title = 'New Chat';
+        const messages = [{role:'user',message:req.body.prompt}];
+
+        const newChat = await chatModel.create({title,messages});
+
+        console.log('new chat created!');
+
+        return res.status(201).json({
+            message:'Chat created successfully',
+            chatId:newChat._id
+        });
     }

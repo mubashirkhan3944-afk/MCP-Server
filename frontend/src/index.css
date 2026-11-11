@@ -71,19 +71,32 @@
     transition: all 0.3s;
 }
 
-
-.chat {
-    animation: drop 0.3s linear;
+.heading{
+    animation: appear 2s;
 }
+
+.google:hover{
+    background-image: linear-gradient(to right,rgb(247, 71, 71),rgb(98, 212, 243),rgb(92, 191, 47));
+    background-clip: text;
+    color: transparent;
+    transition: all 0.5s;
+}
+
+/* .chat {
+    animation: drop 0.3s linear;
+} */
+
+
+
 
 @keyframes drop {
     from{
         /* transform: translateY(100%); */
-        height: 0%;
+        height: 100%;
     }
     to{
         /* transform: translateY(0%); */
-        height: 100%;
+        height: 0%;
     }
 }
 

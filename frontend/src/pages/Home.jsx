@@ -1,240 +1,276 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import axios from 'axios'
-import {ArrowUp, LogOut} from 'lucide-react'
+import { ArrowUp, LogOut, Plus, MessageSquare, Menu, X, Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-
-
 const Home = () => {
- 
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
+  const [messages, setMessages] = useState([])
+  const [input, setInput] = useState('')
+  const [chatHistory, setChatHistory] = useState([])
+  const [activeChatId, setActiveChatId] = useState(localStorage.getItem('chatId'))
+  const [user, setUser] = useState({})
+  const [error, setError] = useState(null)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const messagesEndRef = useRef(null)
 
-    const navigate = useNavigate();
-    const [loading, setloading] = useState(false);
-    const [messages, setmessages] = useState([])
-    const [message, setmessage] = useState({
-      role: 'user',
-      message:''
-    })
-    const [chatButton, setchatButton] = useState(true)
-    const [chatHistory, setchatHistory] = useState([])
-    const [index, setindex] = useState()
-    const [user, setuser] = useState({})
-    const [error, seterror] = useState(null)
-    const [verify, setverify] = useState(true)
-  
-  
-  
-    async function getChatHistory(id){
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
 
-          
-          await axios.get(`http://localhost:5000/api/get-chat/${id}`)
-          .then((response)=>{
-            setmessages(response.data.chat.messages);
-          })
-          .catch((error)=>{
-            console.log(error.response.data.message)
-            localStorage.clear();
-          })
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages, loading])
 
+  useEffect(() => {
+    async function init() {
+      try {
+        const meRes = await axios.get('http://localhost:5000/auth/get-me', { withCredentials: true })
+        setUser(meRes.data.user)
 
-    }
-  
-    useEffect(()=>{
-  
-      async function getAllChatHistory(){
-  
-        const response  = await axios.get('http://localhost:5000/api/get-all-chats',{withCredentials:true});
-  
-        setchatHistory(response.data.chats);
+        const chatsRes = await axios.get('http://localhost:5000/api/get-all-chats', { withCredentials: true })
+        setChatHistory(chatsRes.data.chats || [])
 
-        const chatId = localStorage.getItem('chatId');
-        if(chatId){
-          getChatHistory(chatId);
+        const chatId = localStorage.getItem('chatId')
+        if (chatId) {
+          const chatRes = await axios.get(`http://localhost:5000/api/get-chat/${chatId}`)
+          setMessages(chatRes.data.chat.messages || [])
+          setActiveChatId(chatId)
         }
-  
-        for(let i=0;i<response.data.chats.length;i++){
-          if(response.data.chats[i]._id == chatId){
-            setindex(response.data.chats.length - i - 1)
-          }
-        }
-      }
-
-      async function getMe(){
-        await axios.get('http://localhost:5000/auth/get-me',{withCredentials:true})
-        .then((response)=>{
-          setuser(response.data.user)
-          setverify(response.data.user.verified)
-        })
-        .catch((error)=>{
-          console.log(error.response.data.message)
-          navigate('/login')
-        })
-          
-        }
-  
-      getMe();
-      getAllChatHistory();
-    },[]);
-
-    async function NewChat(){
-      const newchat = {
-        title:'New Chat',
-        messages:{
-          role:'user',
-          message:''
-        }
-      }
-  
-  
-      setchatHistory([...chatHistory,newchat])
-      setmessages([])
-  
-      localStorage.removeItem('chatId')
-    }
-  
-    async function createChat(prompt){
-  
-      const response = await axios.post('http://localhost:5000/api/create',{prompt},{withCredentials:true});
-
-      localStorage.setItem('chatId',response.data.chatId);
-  
-    }
-  
-    async function sendMessage(prompt){
-  
-  
-      setloading(true);
-
-      console.log(user)
-
-      if(!user.verified){
-        seterror('Your account is not verified with google.You must verify to use the features!');
-        setloading(false);
-        return;
-      }
-
-      if(!localStorage.getItem('chatId')){
-        await createChat(prompt);
-      }
-      
-      const chatId = localStorage.getItem('chatId');
-  
-      try{
-  
-        const response = await axios.post('http://localhost:5000/api/chat',{prompt,chatId},{withCredentials:true});
-  
-      setmessages((prev)=>[...prev,{role:'model',message:response.data.message}]);
-  
-      setloading(false);
-  
-  
-      }catch(error){
-        console.log(error.message);
-        setloading(false);
-      }
-  
-    }
-
-    async function GoogleSubmit(){
-      window.location.href =
-          "http://localhost:5000/auth/google/connect";
-    }
-  
-    async function SignOut(){
-      await axios.get('http://localhost:5000/auth/logout',{withCredentials:true})
-      .then((response)=>{
-        localStorage.clear();
-        console.log(response.data.message)
+      } catch (err) {
         navigate('/login')
-      })
-      .catch((error)=>{
-        console.log(error.response.data.message)
-      })
+      }
     }
-  
-    return (
-      <div className='h-screen w-screen bg-[rgb(179,187,176)] text-white flex justify-around items-center main'>
-      {error && <div className='absolute top-[25%] left-[35%] text-xl text-red-400'>{error}</div>}
-        <div className='w-[20%] h-[90%] bg-[rgb(198,226,28)] rounded-4xl shadow-xl flex flex-col items-center pt-5'>
-            <div className='h-[10%] w-[90%] bg-black rounded-xl flex justify-start items-center px-5 hover:text-gray-300 transition-all z-10' onClick={()=>{
-              setchatButton(!chatButton)
-            }}>Chat History</div>
-            <div className='h-[80%] w-[90%]'>
-            {chatButton &&
-            <div className='h-full w-full rounded-xl bg-white/30 backdrop-blur-xl shadow-xl chat flex flex-col items-center justify-start overflow-scroll scrollbar-none p-2 gap-2'>
-              {chatHistory.toReversed().map((chat,idx) => {
-                return (
-                  <div className={`text-start w-full hover:bg-black rounded-xl p-2 ${index==idx ? 'bg-black' : 'bg-black/80'}`} key={idx} onClick={()=>{
-                    getChatHistory(chat?._id);
-                    setindex(idx)
-                  }}>Chat {chatHistory.length - idx}</div>
-                )
-              })}
-            </div>}
+    init()
+  }, [])
+
+  const createChat = async (prompt) => {
+    const res = await axios.post('http://localhost:5000/api/create', { prompt }, { withCredentials: true })
+    localStorage.setItem('chatId', res.data.chatId)
+    setActiveChatId(res.data.chatId)
+    return res.data.chatId
+  }
+
+  const sendMessage = async (prompt) => {
+    if (!prompt.trim()) return
+    setLoading(true)
+    setError(null)
+
+    if (!user.verified) {
+      setError('Please verify your Google account to use Devin.')
+      setLoading(false)
+      return
+    }
+
+    const userMsg = { role: 'user', message: prompt }
+    setMessages(prev => [...prev, userMsg])
+    setInput('')
+
+    try {
+      let chatId = activeChatId
+      if (!chatId) {
+        chatId = await createChat(prompt)
+      }
+
+      const res = await axios.post(
+        'http://localhost:5000/api/chat',
+        { prompt, chatId },
+        { withCredentials: true }
+      )
+
+      setMessages(prev => [...prev, { role: 'model', message: res.data.message }])
+    } catch (err) {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleNewChat = () => {
+    setMessages([])
+    setActiveChatId(null)
+    localStorage.removeItem('chatId')
+  }
+
+  const loadChat = async (id) => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/get-chat/${id}`)
+      setMessages(res.data.chat.messages || [])
+      setActiveChatId(id)
+      localStorage.setItem('chatId', id)
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
+  const handleLogout = async () => {
+    await axios.get('http://localhost:5000/auth/logout', { withCredentials: true })
+    localStorage.clear()
+    navigate('/login')
+  }
+
+  const handleGoogleVerify = () => {
+    window.location.href = 'http://localhost:5000/auth/google/connect'
+  }
+
+  return (
+    <div className="h-screen w-screen flex bg-[#fafafa] text-[#111]">
+      {/* Sidebar */}
+      <div className={`${sidebarOpen ? 'w-[280px]' : 'w-0'} transition-all duration-300 border-r border-[#e5e5e5] bg-white flex flex-col overflow-hidden`}>
+        <div className="p-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 font-semibold text-lg tracking-tight">
+            <div className="w-7 h-7 bg-black rounded-lg flex items-center justify-center">
+              <Sparkles size={15} className="text-white" />
             </div>
-            <div className='w-full flex justify-between px-4 '>
-              <button className='w-25 h-10 rounded-full bg-black mt-2 hover:bg-black/80 transition-all flex justify-center items-center ' title='New Chat' onClick={()=>{
-                NewChat()
-              }}>New Chat</button>
-              <button className='bg-black w-10 h-10 mt-2 rounded-full flex justify-center items-center hover:bg-black/80 transition-all' title='Logout' onClick={()=>
-                SignOut()
-              }>
-                <LogOut size={20}/>
+            Devin
+          </div>
+        </div>
+
+        <div className="px-3 mb-3">
+          <button
+            onClick={handleNewChat}
+            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border border-[#e5e5e5] hover:bg-[#f5f5f5] text-sm font-medium"
+          >
+            <Plus size={16} />
+            New chat
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-3 space-y-1">
+          {chatHistory.slice().reverse().map((chat) => (
+            <button
+              key={chat._id}
+              onClick={() => loadChat(chat._id)}
+              className={`w-full text-left px-3 py-2.5 rounded-xl text-sm flex items-center gap-2 truncate ${
+                activeChatId === chat._id
+                  ? 'bg-[#f0f0f0] font-medium'
+                  : 'hover:bg-[#f5f5f5] text-[#444]'
+              }`}
+            >
+              <MessageSquare size={15} className="opacity-60" />
+              <span className="truncate">Chat</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="p-3 border-t border-[#e5e5e5]">
+          <div className="flex items-center justify-between px-2">
+            <div className="text-sm font-medium truncate">{user?.name || 'User'}</div>
+            <button onClick={handleLogout} className="p-2 hover:bg-[#f0f0f0] rounded-lg">
+              <LogOut size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col relative">
+        {/* Top bar */}
+        <div className="h-14 border-b border-[#e5e5e5] bg-white flex items-center px-4 gap-3">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 hover:bg-[#f0f0f0] rounded-lg"
+          >
+            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+          <div className="text-sm font-medium text-[#666]">Your personal Event Manager</div>
+          
+          {!user?.verified && (
+            <button
+              onClick={handleGoogleVerify}
+              className="ml-auto text-sm bg-black text-white px-4 py-1.5 rounded-full hover:bg-[#333]"
+            >
+              Verify Google Account
+            </button>
+          )}
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 py-8">
+          {messages.length === 0 && !loading ? (
+            <div className="h-full flex flex-col items-center justify-center text-center">
+              <div className="w-14 h-14 bg-black rounded-2xl flex items-center justify-center mb-5">
+                <Sparkles size={26} className="text-white" />
+              </div>
+              <h1 className="text-3xl font-semibold tracking-tight mb-2">What's on your mind?</h1>
+              <p className="text-[#666] text-base max-w-md">
+                Ask Devin to create, update, or manage your Google Calendar events.
+              </p>
+            </div>
+          ) : (
+            <div className="max-w-2xl mx-auto space-y-6">
+              {messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] px-4 py-3 rounded-2xl text-[15px] leading-relaxed ${
+                      msg.role === 'user'
+                        ? 'bg-black text-white rounded-br-md'
+                        : 'bg-white border border-[#e5e5e5] text-[#111] rounded-bl-md shadow-sm'
+                    }`}
+                  >
+                    {msg.message}
+                  </div>
+                </div>
+              ))}
+
+              {loading && (
+                <div className="flex justify-start">
+                  <div className="bg-white border border-[#e5e5e5] px-4 py-3 rounded-2xl rounded-bl-md shadow-sm flex gap-1">
+                    <span className="w-1.5 h-1.5 bg-[#999] rounded-full animate-bounce"></span>
+                    <span className="w-1.5 h-1.5 bg-[#999] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></span>
+                    <span className="w-1.5 h-1.5 bg-[#999] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-red-50 text-red-600 text-sm px-4 py-2 rounded-full border border-red-100">
+            {error}
+          </div>
+        )}
+
+        {/* Input */}
+        <div className="p-4 bg-[#fafafa]">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              sendMessage(input)
+            }}
+            className="max-w-2xl mx-auto"
+          >
+            <div className="relative flex items-center bg-white border border-[#e5e5e5] rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Message Devin..."
+                className="w-full bg-transparent px-5 py-4 outline-none text-[15px] placeholder:text-[#999]"
+              />
+              <button
+                type="submit"
+                disabled={!input.trim() || loading}
+                className="mr-2 w-9 h-9 rounded-xl bg-black text-white flex items-center justify-center disabled:opacity-30 hover:bg-[#222]"
+              >
+                <ArrowUp size={18} />
               </button>
             </div>
-        </div>
-          <form className='h-[90%] w-[75%] flex flex-col justify-center items-center gap-[5%] bg-[rgb(239,239,237)] rounded-4xl p-5 shadow-xl' onSubmit={(e)=>{
-            e.preventDefault();
-            setmessages((prev)=> [...prev,message]);
-            sendMessage(message.message);
-            setmessage({message:''});
-  
-  
-          }}>
-          <div className='text-black font-medium flex justify-between items-center text-start w-full bg-black/10 backdrop-blur-md shadow-xl px-5 py-2 rounded-2xl'>
-            <div className='flex flex-col'>
-              <div className='text-6xl w-full'>DEVIN</div>
-            <p>Your personal Event Manager</p>
-            </div>
-            {!verify &&
-              <div className='bg-black p-4 text-white rounded-2xl hover:scale-98 hover:text-gray-400 transition-all' onClick={GoogleSubmit}>Verify your Account</div>
-            }
-          </div>
-          <div className='h-[80%] w-full rounded-2xl p-5 flex flex-col-reverse gap-5 overflow-y-auto scrollbar-none'>
-          {loading && <div className='bg-[rgb(10,10,10)] w-10 px-4 pb-2 flex items-center justify-center rounded-2xl'>
-              <span className='dot1 text-3xl'>.</span>
-              <span className='dot2 text-3xl'>.</span>
-              <span className='dot3 text-3xl'>.</span>
-            </div>}
-            {messages.length != 0 || loading  ? 
-            <div>
-              {messages.map((message,idx)=>{
-                return (
-                  <div key={idx} className='flex w-full h-auto mt-2'>
-                    {message.role == 'user' ? <div key={idx} className='ml-auto bg-white px-4 py-2 rounded-2xl w-auto text-[rgb(62,62,62)]'>{message.message}</div> : <div key={idx} className='bg-[rgb(11,11,11)] text-[rgb(226,226,226)] px-4 py-2 rounded-2xl'>{message.message}</div>}
-                  </div>
-                )
-            })}
-            </div> : 
-            <div className='w-full flex justify-center h-full'>
-              <div className='text-black text-5xl w-[60%] text-center idea'>Whats on your mind today?</div></div>}
-          </div>
-          <div className='h-[10%] w-full flex justify-between items-center gap-2'>
-            <input type="text" value={message.message} className='outline-none w-full text-black px-4 bg-white rounded-2xl overflow-hidden h-full' placeholder={messages.length == 0 ? 'Whats on your mind today?' : ' '} onChange={(e)=>{
-              setmessage({role:'user',message:e.target.value})
-            }}/>
-            {loading ? <div className='orb'></div> : <div className='text-3xl rounded-full bg-[rgb(198,226,28)] h-10 w-10 text-black flex justify-center items-center arrow' onClick={(e)=>{
-              if(message.message.length != 0){
-                setmessages((prev)=> [...prev,message]);
-                sendMessage(message.message);
-                setmessage({message:''});
-  
-              }
-            }}><ArrowUp/></div>}
-          </div>
+            <p className="text-center text-xs text-[#999] mt-3">
+              Devin can make mistakes. Check important info.
+            </p>
           </form>
+        </div>
       </div>
-    )
+    </div>
+  )
 }
 
 export default Home

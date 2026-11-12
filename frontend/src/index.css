@@ -1,132 +1,44 @@
 @import "tailwindcss";
 
-
-.main{
-    font-family: Sohne, 'Euclid Circular A', 'Noto Sans KR', 'Noto Sans SC', 'Noto Sans JP', sans-serif;
+:root {
+  --bg: #fafafa;
+  --bg-card: #ffffff;
+  --text: #111111;
+  --text-secondary: #666666;
+  --border: #e5e5e5;
+  --accent: #111111;
+  --accent-soft: #f0f0f0;
 }
 
-.orb{
-    height: 40px;
-    width: 40px;
-    background: conic-gradient(rgb(0, 0, 0),rgb(200,227,37),rgb(143, 147, 141));
-    filter: blur(1px);
-    border-radius: 50%;
-    overflow: hidden;
-    animation: spin 10s linear infinite;
-    border-width: 1px;
-    border-color: black;
-
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.orb::after{
-    content: '';
-    position: absolute;
-    background: conic-gradient(rgb(0, 0, 0),rgb(200,227,37),rgb(143, 147, 141));
-    filter: blur(10px);
-    inset: 20%;
-    animation-name: spin;
-    animation-duration: 15s;
-    animation-iteration-count: infinite;
-    animation-timing-function: linear;
-    height: 120px;
-    width: 120px;
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }
 
-.orb::before{
-    content: '';
-    position: absolute;
-    background: conic-gradient(rgb(0, 0, 0),rgb(200,227,37),rgb(143, 147, 141));
-    filter: blur(10px);
-    inset: -80%;
-    animation-name: spin;
-    animation-duration: 15s;
-    animation-iteration-count: infinite;
-    animation-timing-function: linear;
-    height: 120px;
-    width: 120px;
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4d4d4;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a3a3a3;
 }
 
-
-.dot1{
-    padding-right: 5px;
-    color: rgb(200,227,37);
-    animation: fade 1s infinite;
+/* Smooth transitions */
+button, a, input {
+  transition: all 0.2s ease;
 }
-.dot2{
-    padding-right: 5px;
-    color: rgb(200,227,37);
-    animation: fade 1.1s infinite;
-}
-.dot3{
-    animation: fade 1.2s infinite;
-    color: rgb(200,227,37);
-}
-
-.idea {
-    animation: appear 3s;
-}
-
-.arrow:hover{
-    background-color: rgb(158, 180, 30);
-    transition: all 0.3s;
-}
-
-.heading{
-    animation: appear 2s;
-}
-
-.google:hover{
-    background-image: linear-gradient(to right,rgb(247, 71, 71),rgb(98, 212, 243),rgb(92, 191, 47));
-    background-clip: text;
-    color: transparent;
-    transition: all 0.5s;
-}
-
-/* .chat {
-    animation: drop 0.3s linear;
-} */
-
-
-
-
-@keyframes drop {
-    from{
-        /* transform: translateY(100%); */
-        height: 100%;
-    }
-    to{
-        /* transform: translateY(0%); */
-        height: 0%;
-    }
-}
-
-
-@keyframes appear{
-    from {
-        transform: translateY(20%);
-        opacity: 0;
-    }
-    to{
-        transform: translateY(0%);
-        opacity: 1;
-    }
-}
-
-@keyframes fade {
-    0%, 100% {
-      opacity: 1; /* Fully visible at the start and end */
-    }
-    50% {
-      opacity: 0; /* Fully hidden at the midpoint */
-    }
-  }
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to{
-        transform: rotate(360deg);
-    }
-}
-
-

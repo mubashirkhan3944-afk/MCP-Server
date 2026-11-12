@@ -1,7 +1,6 @@
 import userModel from '../models/user.js'
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-
 export async function registerUser(req,res){
     const {name,email,password} = req.body;
 
@@ -19,7 +18,8 @@ export async function registerUser(req,res){
         })
     }
 
-    const hash = await bcrypt.hash(password,10);
+    try{
+        const hash = await bcrypt.hash(password,10);
 
     const user = await userModel.create({name,email,password:hash})
 
@@ -34,6 +34,11 @@ export async function registerUser(req,res){
         message:'User created successfully!',
         user
     })
+    }catch(error){
+        return res.status(500).json({
+            message: error.message
+        })
+    }
 
 
 }

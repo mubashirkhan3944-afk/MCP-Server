@@ -1,8 +1,9 @@
 import 'dotenv/config';
 import express from "express";
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import connectDB from './src/db.js';
 import {server} from './src/mcpserver.js';
-
+await connectDB();
 
 const app = express();
 
@@ -33,6 +34,6 @@ app.post('/messages',async(req,res)=>{
 
 
 
-app.listen(3000,()=>{
+app.listen(3000,async()=>{
     console.log('Server running on port 3000')
 })

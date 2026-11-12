@@ -2,10 +2,6 @@ import crypto from "crypto";
 import {createGoogleOAuthClient} from '../config/google.config.js'
 import userModel from "../../../models/user.js";
 import jwt from 'jsonwebtoken'
-import {oauthClient} from '../../../../Server/src/mcpserver.js'
-import { access } from "fs";
-
-
 const SCOPES = [
     "openid",
     "email",
@@ -56,12 +52,8 @@ export async function googleCallback(req,res) {
         // Authorization code ko tokens mein exchange karo
         const {tokens} = await oauth2Client.getToken(code);
 
-        oauthClient.setCredentials({
-          refresh_token:tokens.refresh_token,
-          access_token: tokens.access_token          
-        })
-  
-  
+        console.log(tokens);
+
         const ticket = await oauth2Client.verifyIdToken({
           idToken: tokens.id_token,
           audience: process.env.GOOGLE_CLIENT_ID

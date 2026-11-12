@@ -2,22 +2,38 @@ import { calendar as googleCalendar } from 'googleapis/build/src/apis/calendar/i
 import { OAuth2Client } from 'google-auth-library';
 import * as z from 'zod/v4';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import userModel from './models/user.js';
 
+const userIdField = z.string().optional().describe(
+  'Filled by the app from the logged-in user. Do not set this.'
+);
 
-export const oauthClient = new OAuth2Client({
+async function getCalendar(userId) {
+  if (!userId) {
+    throw new Error('Missing user id. Start a chat while logged in, then try again.');
+  }
+
+  const user = await userModel.findById(userId);
+
+  if (!user?.refreshToken && !user?.accessToken) {
+    throw new Error('This account has no Google Calendar tokens. Connect Google first.');
+  }
+
+  const auth = new OAuth2Client({
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-});
+  });
 
-// oauthClient.setCredentials({
-//     refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
-// });
+  auth.setCredentials({
+    refresh_token: user.refreshToken,
+    access_token: user.accessToken,
+  });
 
-const calendar = googleCalendar({
-    version: "v3",
-    auth: oauthClient,
-});
-
+  return googleCalendar({
+    version: 'v3',
+    auth,
+  });
+}
 
 export const server = new McpServer({
     name:'MCP_Server',
@@ -38,6 +54,7 @@ server.registerTool(
       }),
       timeZone:z.string().default('Asia/Karachi'),
       googleEventId:z.string(),
+      userId: userIdField,
     }
   },
 
@@ -46,7 +63,8 @@ server.registerTool(
     endDateTime,
     timeZone,
     description,
-    googleEventId
+    googleEventId,
+    userId
   }) => {
 
     try{
@@ -69,6 +87,8 @@ server.registerTool(
         ],
       };
     }
+
+    const calendar = await getCalendar(userId);
 
     const response = await calendar.events.list({
       calendarId:'primary',
@@ -146,6 +166,7 @@ server.registerTool(
         description: z.string().max(2000).optional(),
   
         location: z.string().max(500).optional(),
+        userId: userIdField,
         }
     },
     async ({
@@ -155,6 +176,7 @@ server.registerTool(
         timeZone,
         description,
         location,
+        userId,
       }) => {
         try {
           const start = new Date(startDateTime);
@@ -175,6 +197,8 @@ server.registerTool(
               ],
             };
           }
+
+          const calendar = await getCalendar(userId);
     
           const response = await calendar.events.insert({
             calendarId: "primary",
@@ -198,18 +222,6 @@ server.registerTool(
     
           const event = response.data;
 
-          // await eventModel.create({
-          //   id: event.id,
-          //   title: event.summary,
-          //   start: event.start.dateTime,
-          //   end: event.end.dateTime,
-          //   htmlLink: event.htmlLink,
-          //   timeZone:event.start.timeZone
-          // }).then(()=>{
-          //   console.log('Event created successfully');
-          // })
-
-    
           return {
             content: [
               {
@@ -241,9 +253,7 @@ server.registerTool(
             content: [
               {
                 type: "text",
-                text:
-                  "Could not create the Google Calendar event. " +
-                  "Check your OAuth permissions, token, and event data.",
+                text: `Could not create the Google Calendar event: ${error.message}`,
               },
             ],
           };
@@ -271,11 +281,12 @@ server.registerTool(
 
       summary: z.string().max(100),
 
-      description: z.string().max(200).optional()
+      description: z.string().max(200).optional(),
+      userId: userIdField,
     }
   },
 
-  async ({eventId,startDateTime,endDateTime,location,summary,description})=>{
+  async ({eventId,startDateTime,endDateTime,location,summary,description,userId})=>{
 
     if(!eventId){
       return {
@@ -306,6 +317,8 @@ server.registerTool(
         ],
       };
     }
+
+    const calendar = await getCalendar(userId);
 
     const updatedEvent = await calendar.events.patch({
       calendarId:'primary',
@@ -355,11 +368,12 @@ server.registerTool(
   {
     description:'Delete an existing event from calendar',
     inputSchema:{
-      id:z.string()
+      id:z.string(),
+      userId: userIdField,
     }
   },
 
-  async ({id})=>{
+  async ({id, userId})=>{
 
     if(!id){
       return {
@@ -374,6 +388,8 @@ server.registerTool(
     }
 
     try{
+
+      const calendar = await getCalendar(userId);
 
       const deleteEvent = await calendar.events.delete({
         eventId:id,

@@ -8,7 +8,7 @@ import chatModel from '../models/model.js';
 config()
 
     const ai = new GoogleGenAI({
-        apiKey:process.env.GEMINI_API_KEY1
+        apiKey:process.env.GEMINI_API_KEY3
     });
     
     const mcpClient = new Client({
@@ -62,9 +62,20 @@ config()
         })
     
     
+        const chat = await chatModel.findById(chatId).select('userId');
+
+        if (!chat?.userId) {
+            return res.status(400).json({
+                message: 'This chat has no user. Create a new chat while logged in.'
+            });
+        }
+
         const toolResult = await mcpClient.callTool({
             name:toolCall.name,
-            arguments:toolCall.args,
+            arguments:{
+                ...toolCall.args,
+                userId: String(chat.userId),
+            },
             id:toolCall.id
         })
 

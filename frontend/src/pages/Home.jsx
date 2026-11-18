@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios'
-import {ArrowUp, LogOut} from 'lucide-react'
+import {ArrowUp, AudioLines, LogOut, MicIcon} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 
@@ -21,6 +21,7 @@ const Home = () => {
     const [user, setuser] = useState({})
     const [error, seterror] = useState(null)
     const [verify, setverify] = useState(true)
+    const [voiceRecord, setvoiceRecord] = useState(false)
   
   
   
@@ -139,7 +140,6 @@ const Home = () => {
       window.location.href =
           "http://localhost:5000/auth/google/connect";
     }
-  
     async function SignOut(){
       await axios.get('http://localhost:5000/auth/logout',{withCredentials:true})
       .then((response)=>{
@@ -223,7 +223,7 @@ const Home = () => {
             <input type="text" value={message.message} className='outline-none w-full text-black px-4 bg-white rounded-2xl overflow-hidden h-full' placeholder={messages.length == 0 ? 'Whats on your mind today?' : ' '} onChange={(e)=>{
               setmessage({role:'user',message:e.target.value})
             }}/>
-            {loading ? <div className='orb'></div> : <div className='text-3xl rounded-full bg-[rgb(198,226,28)] h-10 w-10 text-black flex justify-center items-center arrow' onClick={(e)=>{
+            {loading ? <div className='orb'></div> : <div className='text-3xl rounded-full bg-[rgb(198,226,28)] h-10 w-10 text-black flex justify-center items-center arrow' title='Send Message' onClick={(e)=>{
               if(message.message.length != 0){
                 setmessages((prev)=> [...prev,message]);
                 sendMessage(message.message);

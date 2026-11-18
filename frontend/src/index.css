@@ -82,13 +82,6 @@
     transition: all 0.5s;
 }
 
-/* .chat {
-    animation: drop 0.3s linear;
-} */
-
-
-
-
 @keyframes drop {
     from{
         /* transform: translateY(100%); */

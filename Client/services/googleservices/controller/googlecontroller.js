@@ -79,7 +79,14 @@ export async function googleCallback(req,res) {
           id:user._id
         },process.env.JWT_SECRET)
 
-          res.cookie('Token',token)
+          res.cookie('Token',token,{
+            httpOnly:true,
+            secure:true,
+            sameSite:'none',
+            maxAge:24*60*60*1000,
+            path:'/'
+        })
+
         }else{
           const updatedUser = await userModel.findByIdAndUpdate(user._id,{
             $set:{
@@ -96,11 +103,17 @@ export async function googleCallback(req,res) {
           id:user._id
         },process.env.JWT_SECRET)
 
-          res.cookie('Token',token)
+          res.cookie('Token',token,{
+            httpOnly:true,
+            secure:true,
+            sameSite:'none',
+            maxAge:24*60*60*1000,
+            path:'/'
+        })
         }
     
         
-        res.redirect("http://localhost:5173/");
+        res.redirect("https://frontend-mcp-server.onrender.com/");
     
       } catch (error) {
         console.error("Google OAuth error:", error);

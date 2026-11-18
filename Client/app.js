@@ -33,7 +33,7 @@ const sessionMiddleware = session({
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false, // localhost development only
+      secure: true, // localhost development only
       sameSite: "lax",
       maxAge: 10 * 60 * 1000
     }

@@ -28,7 +28,13 @@ export async function registerUser(req,res){
     },process.env.JWT_SECRET);
 
 
-    res.cookie('Token',token)
+    res.cookie('Token',token,{
+        httpOnly:true,
+        secure:true,
+        sameSite:'none',
+        maxAge:24*60*60*1000,
+        path:'/'
+    })
 
     return res.status(201).json({
         message:'User created successfully!',
@@ -79,7 +85,13 @@ export async function loginUser(req,res) {
         id:user._id
     },process.env.JWT_SECRET)
 
-    res.cookie('Token',token)
+    res.cookie('Token',token,{
+        httpOnly:true,
+        secure:true,
+        sameSite:'none',
+        maxAge:24*60*60*1000,
+        path:'/'
+    })
 
     return res.status(200).json({
         message:'User logged in successfully!'

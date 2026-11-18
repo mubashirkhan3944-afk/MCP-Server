@@ -1,5 +1,5 @@
 import { Eye, EyeClosed } from 'lucide-react'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
@@ -15,7 +15,7 @@ const Register = () => {
     async function SubmitForm(e){
       e.preventDefault();
 
-      await axios.post('http://localhost:5000/auth/register',{name,email,password},{withCredentials:true})
+      await axios.post('https://client-mcp-server.onrender.com/auth/register',{name,email,password},{withCredentials:true})
       .then((response)=>{
         console.log(response.data.message);
         navigate('/')
@@ -27,7 +27,7 @@ const Register = () => {
 
     async function GoogleForm() {
       window.location.href =
-          "http://localhost:5000/auth/google/connect";
+          "https://client-mcp-server.onrender.com/auth/google/connect";
     }
 
 

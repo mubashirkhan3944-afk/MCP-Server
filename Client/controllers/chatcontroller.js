@@ -22,7 +22,7 @@ config()
     let tools = [];
     let question1 = `Today is ${new Date()}`;
     
-    mcpClient.connect(new SSEClientTransport(new URL('http://localhost:3000/sse')))
+    mcpClient.connect(new SSEClientTransport(new URL('https://server-mcp-server.onrender.com/sse')))
     .then(async()=>{
     
         console.log('connected to mcp server');

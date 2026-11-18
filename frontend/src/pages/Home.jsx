@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import axios from 'axios'
-import {ArrowUp, AudioLines, LogOut, MicIcon} from 'lucide-react'
+import {ArrowUp, LogOut} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 
@@ -21,14 +21,13 @@ const Home = () => {
     const [user, setuser] = useState({})
     const [error, seterror] = useState(null)
     const [verify, setverify] = useState(true)
-    const [voiceRecord, setvoiceRecord] = useState(false)
   
   
   
     async function getChatHistory(id){
 
           
-          await axios.get(`http://localhost:5000/api/get-chat/${id}`)
+          await axios.get(`https://client-mcp-server.onrender.com/api/get-chat/${id}`)
           .then((response)=>{
             setmessages(response.data.chat.messages);
           })
@@ -44,7 +43,7 @@ const Home = () => {
   
       async function getAllChatHistory(){
   
-        const response  = await axios.get('http://localhost:5000/api/get-all-chats',{withCredentials:true});
+        const response  = await axios.get('https://client-mcp-server.onrender.com/api/get-all-chats',{withCredentials:true});
   
         setchatHistory(response.data.chats);
 
@@ -61,7 +60,7 @@ const Home = () => {
       }
 
       async function getMe(){
-        await axios.get('http://localhost:5000/auth/get-me',{withCredentials:true})
+        await axios.get('https://client-mcp-server.onrender.com/auth/get-me',{withCredentials:true})
         .then((response)=>{
           setuser(response.data.user)
           setverify(response.data.user.verified)
@@ -95,7 +94,7 @@ const Home = () => {
   
     async function createChat(prompt){
   
-      const response = await axios.post('http://localhost:5000/api/create',{prompt},{withCredentials:true});
+      const response = await axios.post('https://client-mcp-server.onrender.com/api/create',{prompt},{withCredentials:true});
 
       localStorage.setItem('chatId',response.data.chatId);
   
@@ -122,7 +121,7 @@ const Home = () => {
   
       try{
   
-        const response = await axios.post('http://localhost:5000/api/chat',{prompt,chatId},{withCredentials:true});
+        const response = await axios.post('https://client-mcp-server.onrender.com/api/chat',{prompt,chatId},{withCredentials:true});
   
       setmessages((prev)=>[...prev,{role:'model',message:response.data.message}]);
   
@@ -138,10 +137,10 @@ const Home = () => {
 
     async function GoogleSubmit(){
       window.location.href =
-          "http://localhost:5000/auth/google/connect";
+          "https://client-mcp-server.onrender.com/auth/google/connect";
     }
     async function SignOut(){
-      await axios.get('http://localhost:5000/auth/logout',{withCredentials:true})
+      await axios.get('https://client-mcp-server.onrender.com/auth/logout',{withCredentials:true})
       .then((response)=>{
         localStorage.clear();
         console.log(response.data.message)
